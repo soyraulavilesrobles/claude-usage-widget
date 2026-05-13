@@ -21,9 +21,43 @@ def read_official_cache():
     try:
         d = json.loads(CACHE_FILE.read_text())
         received = datetime.fromisoformat(d["received_at"])
-        if datetime.now(timezone.utc) - received > CACHE_MAX_AGE:
-            return None  # stale
+        now = datetime.now(timezone.utc)
+        if now - received > CACHE_MAX_AGE:
+            return None  # stale by age
+        # Also invalidate if the 5h window already reset since data was cached
+        resets_at_raw = d.get("five_hour", {}).get("resets_at")
+        if resets_at_raw:
+            resets_at = datetime.fromtimestamp(float(resets_at_raw), tz=timezone.utc)
+            if resets_at <= now:
+                return None  # window reset — data belongs to previous window
         return d
+    except Exception:
+        return None
+
+
+def window_start_from_stale_cache():
+    """Return the start of the current Anthropic window from cached resets_at.
+
+    resets_at is the *end* of the current window (next reset). The window
+    starts 5 hours before that. If resets_at is already in the past the
+    window has reset; the new window started at that time.
+    Returns None when the cache or timestamp is unavailable.
+    """
+    if not CACHE_FILE.exists():
+        return None
+    try:
+        d = json.loads(CACHE_FILE.read_text())
+        resets_at_raw = d.get("five_hour", {}).get("resets_at")
+        if not resets_at_raw:
+            return None
+        resets_at = datetime.fromtimestamp(float(resets_at_raw), tz=timezone.utc)
+        now = datetime.now(timezone.utc)
+        if resets_at > now:
+            # Window has NOT reset yet — it started 5h before resets_at
+            return resets_at - timedelta(hours=5)
+        else:
+            # Window already reset — new window started at resets_at
+            return resets_at
     except Exception:
         return None
 
@@ -40,7 +74,10 @@ PLAN_LIMITS = {"pro": 13.00, "max_5x": 65.00, "max_20x": 260.00}
 
 
 def estimate_from_jsonl():
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=5)
+    rolling = datetime.now(timezone.utc) - timedelta(hours=5)
+    window_start = window_start_from_stale_cache()
+    # Use whichever is more recent: rolling 5h window or known window start
+    cutoff = max(rolling, window_start) if window_start else rolling
     totals = dict(input_tokens=0, output_tokens=0,
                   cache_creation_input_tokens=0, cache_read_input_tokens=0)
     cost_usd = 0.0

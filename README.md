@@ -6,6 +6,17 @@ Muestra el porcentaje de uso de Claude Code en la **ventana de 5 horas** — igu
 
 ---
 
+## Screenshots
+
+| Mac menu bar | xbar dropdown | iPhone widget |
+|:---:|:---:|:---:|
+| ![Menu bar](docs/screenshot_menubar.png) | ![xbar](docs/screenshot_xbar.png) | ![iPhone](docs/screenshot_iphone.png) |
+
+**Claude Code status line:**
+![Status line](docs/screenshot_statusline.png)
+
+---
+
 ## Cómo funciona / How it works
 
 ```
