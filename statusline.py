@@ -43,6 +43,23 @@ def main():
     sd = rl.get("seven_day", {})
 
     if fh or sd:
+        # Keep the maximum used_percentage seen within the same window.
+        # Anthropic sometimes reports lower values mid-request; using the max
+        # prevents the displayed % from bouncing downward unexpectedly.
+        if CACHE_FILE.exists():
+            try:
+                prev = json.loads(CACHE_FILE.read_text())
+                prev_fh = prev.get("five_hour", {})
+                same_window = (prev_fh.get("resets_at") == fh.get("resets_at"))
+                if same_window:
+                    prev_pct = float(prev_fh.get("used_percentage", 0))
+                    new_pct  = float(fh.get("used_percentage", 0))
+                    if prev_pct > new_pct:
+                        fh = dict(fh)
+                        fh["used_percentage"] = prev_pct
+            except Exception:
+                pass
+
         cache = {
             "received_at": datetime.now(timezone.utc).isoformat(),
             "five_hour": fh,
