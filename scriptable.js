@@ -146,6 +146,8 @@ footer.textColor = new Color("#4b5563");
 
 // Ask iOS to refresh every 2 minutes (may be delayed by the system)
 w.refreshAfterDate = new Date(Date.now() + 2 * 60 * 1000);
+// Tap widget → opens Scriptable, re-runs this script with fresh data
+w.url = "scriptable:///run/ClaudeUsage";
 
 Script.setWidget(w);
 if (!config.runsInWidget) await w.presentSmall();
