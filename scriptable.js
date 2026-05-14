@@ -6,7 +6,8 @@ const GITHUB_USER = "TU_USUARIO_GITHUB";
 const GIST_ID     = "TU_GIST_ID";
 // ────────────────────────────────────────────────────────────────────────────
 
-const RAW_URL = `https://gist.githubusercontent.com/${GITHUB_USER}/${GIST_ID}/raw/claude-usage.json`;
+// Timestamp appended to bypass GitHub's CDN cache on every widget refresh.
+const RAW_URL = `https://gist.githubusercontent.com/${GITHUB_USER}/${GIST_ID}/raw/claude-usage.json?t=${Date.now()}`;
 
 let d;
 try {
@@ -25,7 +26,13 @@ try {
   return;
 }
 
-const pct      = d.usage_pct ?? 0;
+// If the 5-hour window has already rolled over, the Gist still holds the
+// previous window's high percentage until sync.py pushes fresh data.
+// Zero it out client-side so the widget doesn't mislead after reset.
+let pct = d.usage_pct ?? 0;
+if (d.resets_at && new Date(d.resets_at) <= new Date()) {
+  pct = 0;
+}
 const cost     = d.estimated_cost_usd ?? 0;
 const limitUsd = d.limit_usd ?? 13.0;
 
