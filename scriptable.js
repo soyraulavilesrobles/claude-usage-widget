@@ -142,6 +142,15 @@ const footer = w.addText(`act. hace ${timeStr}`);
 footer.font = Font.systemFont(9);
 footer.textColor = new Color("#4b5563");
 
+// Schedule next refresh at reset time so the widget updates the moment the
+// 5-hour window rolls over (otherwise iOS may delay up to ~30-60 min).
+if (d.resets_at) {
+  const resetsAt = new Date(d.resets_at);
+  if (resetsAt > new Date()) {
+    w.refreshAfterDate = resetsAt;
+  }
+}
+
 Script.setWidget(w);
 if (!config.runsInWidget) await w.presentSmall();
 Script.complete();

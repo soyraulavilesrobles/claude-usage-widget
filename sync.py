@@ -185,11 +185,20 @@ def main():
         # ── Fallback: estimate from local JSONL ───────────────────────────────
         totals, cost_usd = estimate_from_jsonl()
         pct = min(round(cost_usd / limit_usd * 100, 1), 100.0)
+
+        # Derive estimated resets_at from cached window start + 5 h
+        window_start = window_start_from_stale_cache()
+        resets_at_str = ""
+        if window_start:
+            est_resets = window_start + timedelta(hours=5)
+            if est_resets > datetime.now(timezone.utc):
+                resets_at_str = est_resets.isoformat()
+
         data = {
             "source": "jsonl_estimate",
             "window_hours": 5,
             "updated_at": datetime.now(timezone.utc).isoformat(),
-            "resets_at": "",
+            "resets_at": resets_at_str,
             "usage_pct": pct,
             "usage_pct_7d": None,
             "session_cost_usd": round(cost_usd, 4),
