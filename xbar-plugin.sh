@@ -68,14 +68,25 @@ else:
     print(f"Cache write:  {d['cache_creation_input_tokens']:>12,} tok")
 print("---")
 pct_7d = d.get("usage_pct_7d")
-resets = d.get("resets_at","")
-if resets:
+resets_str = ""
+resets_raw = d.get("resets_at", "")
+if resets_raw:
     try:
-        rt = datetime.fromisoformat(resets).astimezone()
-        resets = rt.strftime("↺ %H:%M")
-    except: resets = ""
+        from datetime import timedelta
+        rt = datetime.fromisoformat(resets_raw).astimezone()
+        now_local = datetime.now().astimezone()
+        # Advance by 5h intervals until we find the next future reset
+        while rt <= now_local:
+            rt += timedelta(hours=5)
+        diff = rt - now_local
+        total_mins = int(diff.total_seconds() // 60)
+        hrs, mins = divmod(total_mins, 60)
+        countdown = f"{hrs}h{mins:02d}m" if hrs else f"{mins}m"
+        resets_str = f"↺ en {countdown}  ({rt.strftime('%H:%M')})"
+    except:
+        resets_str = ""
 
 print(f"Actualizado hace {t}  {source}")
-if resets: print(resets)
+if resets_str: print(resets_str)
 if pct_7d is not None: print(f"Semana (7d): {pct_7d}%")
 PYEOF

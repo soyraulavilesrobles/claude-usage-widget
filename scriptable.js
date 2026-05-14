@@ -39,16 +39,18 @@ const timeStr   = mins < 60 ? `${mins}m` : `${Math.floor(mins/60)}h${(mins%60).t
 
 let resetStr = "";
 if (d.resets_at) {
-  const resetsAt = new Date(d.resets_at);
-  const diffMs   = resetsAt - Date.now();
-  if (diffMs > 0) {
-    const diffMins = Math.floor(diffMs / 60000);
-    const rh = Math.floor(diffMins / 60);
-    const rm = diffMins % 60;
-    resetStr = rh > 0
-      ? `↺ en ${rh}h${rm.toString().padStart(2,"0")}m`
-      : `↺ en ${rm}m`;
+  // Advance by 5h intervals if resets_at is stale (API sometimes keeps old value)
+  let resetsAt = new Date(d.resets_at);
+  while (resetsAt <= new Date()) {
+    resetsAt = new Date(resetsAt.getTime() + 5 * 60 * 60 * 1000);
   }
+  const diffMs   = resetsAt - Date.now();
+  const diffMins = Math.floor(diffMs / 60000);
+  const rh = Math.floor(diffMins / 60);
+  const rm = diffMins % 60;
+  resetStr = rh > 0
+    ? `↺ en ${rh}h${rm.toString().padStart(2,"0")}m`
+    : `↺ en ${rm}m`;
 }
 
 // ── Widget ────────────────────────────────────────────────────────────────────
