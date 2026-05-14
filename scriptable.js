@@ -144,8 +144,11 @@ const footer = w.addText(`act. hace ${timeStr}`);
 footer.font = Font.systemFont(9);
 footer.textColor = new Color("#4b5563");
 
-// Ask iOS to refresh every 2 minutes (may be delayed by the system)
-w.refreshAfterDate = new Date(Date.now() + 2 * 60 * 1000);
+// When run manually (tap), mark as expired so iOS redraws immediately.
+// When run as widget, request refresh in 2 min.
+w.refreshAfterDate = config.runsInWidget
+  ? new Date(Date.now() + 2 * 60 * 1000)
+  : new Date(Date.now() - 1000);
 // Tap widget → opens Scriptable, re-runs this script with fresh data
 w.url = "scriptable:///run/ClaudeUsage";
 
